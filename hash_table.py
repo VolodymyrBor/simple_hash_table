@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Generic, TypeVar, Hashable, Iterable
 
-_V = TypeVar('_V')
-_K = TypeVar('_K', bound=Hashable)
+_V = TypeVar('_V')  # Value type
+_K = TypeVar('_K', bound=Hashable)  # Key type
 
 
 @dataclass
@@ -13,32 +13,36 @@ class _Item(Generic[_K, _V]):
 
 class HashTable(Generic[_K, _V]):
 
-    _INITIAL_SIZE = 4
-    _RESIZE_MUL = 2
+    _INITIAL_SIZE = 4  # Initial size of hash-table
+    _RESIZE_MUL = 2  # Resize multiplication
 
     def __init__(self, initial: dict[_K, _V] | None = None):
         self._table: list[list[_Item]] = [[] for _ in range(self._INITIAL_SIZE)]
         self._count_items = 0
-        if initial:
+        if initial:  # Fill hash-table if initial
             for key, value in initial.items():
                 self._update(key, value)
 
     def keys(self) -> Iterable[_K]:
+        """Iterable of keys"""
         for items in self._table:
             for item in items:
                 yield item.key
 
     def values(self) -> Iterable[_V]:
+        """Iterable of values"""
         for items in self._table:
             for item in items:
                 yield item.value
 
     def items(self) -> Iterable[tuple[_K, _V]]:
+        """Iterable of keys and values"""
         for items in self._table:
             for item in items:
                 yield item.key, item.value
 
     def _update(self, key: _K, value: _V, resize: bool = True):
+        """Insert or set value"""
         try:
             index, sub_index = self._find(key)
             self._table[index][sub_index].value = value
@@ -55,17 +59,24 @@ class HashTable(Generic[_K, _V]):
                 self._resize()
 
     def _get(self, key: _K) -> _V:
+        """Get value"""
         index, sub_index = self._find(key)
         return self._table[index][sub_index].value
 
     def _delete(self, key: _K):
+        """Delete value"""
         index, sub_index = self._find(key)
         del self._table[index][sub_index]
         self._count_items -= 1
         self._resize()
 
     def _resize(self):
+        """Resize hash-table.
 
+        Increase size to reduce the probability of collision.
+        Decrease size to reduce the memory usage.
+
+        """
         expected_size = self._count_items * self._RESIZE_MUL
 
         if expected_size > len(self._table):
@@ -83,11 +94,13 @@ class HashTable(Generic[_K, _V]):
                 self._update(item.key, item.value, resize=False)
 
     def _get_index(self, key: _K) -> int:
+        """Get index based hash-value of key"""
         hash_value = hash(key)
         index = hash_value % len(self._table)
         return index
 
     def _find(self, key: _K) -> tuple[int, int]:
+        """Find index and sub-index"""
         index = self._get_index(key)
         items = self._table[index]
         for sub_index, item in enumerate(items):
